@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Lab 4 – Role Manipulation</title>
+
+<style>
+body{font-family:Tahoma;background:#f3f4f6;margin:0}
+.hidden{display:none}
+.container{max-width:600px;margin:50px auto;background:white;padding:20px;border-radius:15px}
+button{padding:10px 15px;border:none;border-radius:8px;background:#2563eb;color:white;cursor:pointer}
+input{width:100%;padding:10px;margin-bottom:10px}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="loginPage" class="container">
+  <h2>Login</h2>
+  <input id="loginUser" placeholder="Username">
+  <input id="loginPass" type="password" placeholder="Password">
+  <button onclick="login()">Login</button>
+  <p>wiener / peter</p>
+</div>
+
+<!-- ACCOUNT -->
+<div id="accountPage" class="container hidden">
+  <h2>My Account</h2>
+  <p><b>User:</b> <span id="uName"></span></p>
+  <p><b>Role ID:</b> <span id="uRole"></span></p>
+
+  <h3>Update Email</h3>
+  <input id="emailInput" placeholder="New Email">
+  <button onclick="updateEmail()">Update</button>
+
+  <br><br>
+  <button id="adminBtn" class="hidden" onclick="goAdmin()">Go to Admin Panel</button>
+</div>
+
+<script>
+let currentUser = null;
+
+function login(){
+  fetch("/login",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      username:loginUser.value,
+      password:loginPass.value
+    })
+  })
+  .then(r=>r.json())
+  .then(data=>{
+    currentUser = data;
+    showAccount();
+  })
+  .catch(()=>alert("Login failed"));
+}
+
+function showAccount(){
+  loginPage.classList.add("hidden");
+  accountPage.classList.remove("hidden");
+
+  uName.innerText = currentUser.username;
+  uRole.innerText = currentUser.roleId;
+
+  // ✅ Admin button only if server says so
+  if(currentUser.roleId === 2){
+    adminBtn.classList.remove("hidden");
+  }
+}
+
+function updateEmail(){
+  fetch("/account/update",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({
+      email: emailInput.value
+      // 🔴 attacker adds: roleId:2 via Burp
+    })
+  })
+  .then(r=>r.json())
+  .then(data=>{
+    currentUser = data;
+    uRole.innerText = currentUser.roleId;
+
+    if(currentUser.roleId === 2){
+      adminBtn.classList.remove("hidden");
+    }
+  });
+}
+
+function goAdmin(){
+  window.location="/admin";
+}
+</script>
+
+</body>
+</html>
